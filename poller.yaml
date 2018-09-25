@@ -1,0 +1,41 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: traffic-poller
+  labels:
+    app: traffic-poller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-poller
+  template:
+    metadata:
+      labels:
+        app: traffic-poller
+        name: traffic-poller
+    spec:
+      volumes:
+      - name: service-account
+        secret:
+          secretName: "poller"
+      containers:
+        - name: traffic-poller
+          image: gcr.io/westpine-project1/traffic-poller:v1
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: "service-account"
+              mountPath: "/var/run/secret/cloud.google.com"
+          env:
+            - name: "GOOGLE_APPLICATION_CREDENTIALS"
+              value: "/var/run/secret/cloud.google.com/poller-svc-acct-key.json"
+            - name: "GCLOUD_PROJECT"
+              valueFrom:
+                configMapKeyRef:
+                  name: poller
+                  key: project-id
+            - name: "CLOUD_STORAGE_BUCKET"
+              valueFrom:
+                configMapKeyRef:
+                  name: poller
+                  key: bucket
